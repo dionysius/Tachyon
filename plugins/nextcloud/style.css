@@ -5,9 +5,32 @@
 	clear: right;
 	line-height: 2.5em;
 }
+
+/*
+ * A file row is the name as text with the checkbox appended after it, and the
+ * checkbox used to be floated right. A float sits at the top of its line box
+ * rather than the middle of it, so against a 2.5em row the box rode high and
+ * ended up far from the name it belongs to (#117). Lay the row out instead,
+ * and put the box first, where a list of selectable things puts it.
+ *
+ * Folder rows hold a <details> with the subtree inside, so they must stay
+ * block level: this is scoped to the file rows, which carry data-icon="file".
+ */
+#V-PopupsNextcloudFiles li[data-icon="file"] {
+	align-items: center;
+	display: flex;
+	gap: 0.5em;
+}
+#V-PopupsNextcloudFiles li[data-icon="file"] input {
+	margin: 0;
+	order: -1;
+}
 #V-PopupsNextcloudFiles li input,
 #V-PopupsNextcloudFiles li button {
 	cursor: pointer;
+}
+#V-PopupsNextcloudFiles li:not([data-icon="file"]) input,
+#V-PopupsNextcloudFiles li:not([data-icon="file"]) button {
 	float: right;
 	margin: 0 0 0 0.5em;
 }
