@@ -45,4 +45,13 @@ check(Request::headerLines(['X-Note' => 'Authorization: none']) === ['X-Note: Au
 check(Request::headerLines(['Depth: 0', 'Accept' => 'text/vcard']) === ['Depth: 0', 'Accept: text/vcard'],
 	'mixed list lost an entry or its order');
 
+
+// One header is one line: a value cannot end it and start another.
+$aInjected = Request::headerLines(['X-Test' => "ok\r\nX-Injected: yes"]);
+check(1 === count($aInjected), 'a CRLF in a value split the header');
+check(!str_contains($aInjected[0], "\r") && !str_contains($aInjected[0], "\n"),
+	'a CRLF in a value is sent as is');
+check(str_contains($aInjected[0], 'X-Injected: yes'), 'the value was dropped rather than folded');
+check(['X-Test: ok'] === Request::headerLines(['X-Test' => "ok\0"]), 'a NUL is sent as is');
+
 echo "ok\n";

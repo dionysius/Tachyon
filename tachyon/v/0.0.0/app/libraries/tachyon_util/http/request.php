@@ -432,7 +432,12 @@ abstract class Request
 	{
 		$lines = array();
 		foreach ($headers as $name => $value) {
-			$value = (string) $value;
+			// One header is one line. Nothing reaching here takes a value from a
+			// request today, but this is now the single place every outgoing header
+			// is built, so it is the cheap place to make sure a value cannot end its
+			// own line and start another.
+			$value = \trim(\preg_replace('/[\r\n\0]+/', ' ', (string) $value));
+			$name = \is_int($name) ? $name : \preg_replace('/[\r\n\0]+/', '', $name);
 			$lines[] = (\is_int($name) || 0 === \stripos($value, $name . ':'))
 				? $value
 				: "{$name}: {$value}";
