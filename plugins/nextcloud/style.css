@@ -22,19 +22,47 @@
 	gap: 0.5em;
 }
 #V-PopupsNextcloudFiles li[data-icon="file"] input {
+	flex: none;
 	margin: 0;
-	order: -1;
 }
 #V-PopupsNextcloudFiles li input,
 #V-PopupsNextcloudFiles li button {
 	cursor: pointer;
 }
-#V-PopupsNextcloudFiles li:not([data-icon="file"]) input,
-#V-PopupsNextcloudFiles li:not([data-icon="file"]) button {
+/*
+ * The create-a-folder row only: a child combinator, or this also catches the
+ * radio nested in details > summary and floats it away from its name.
+ */
+#V-PopupsNextcloudFiles li:not([data-icon="file"]) > input,
+#V-PopupsNextcloudFiles li:not([data-icon="file"]) > button {
 	float: right;
 	margin: 0 0 0 0.5em;
 }
 
 #rl-app .squire-wysiwyg a {
 	text-decoration: underline;
+}
+
+/*
+ * Folder rows in select mode carry a radio ahead of the name, inside the
+ * <summary> that opens the subtree. The summary is deliberately left as it is:
+ * giving it display:flex drops the disclosure triangle in Chrome and Safari,
+ * because that marker comes from display:list-item. Align the radio instead.
+ */
+#V-PopupsNextcloudFiles summary input[type="radio"] {
+	cursor: pointer;
+	margin: 0 0.5em 0 0;
+	vertical-align: middle;
+}
+#V-PopupsNextcloudFiles summary > span {
+	vertical-align: middle;
+}
+
+/* The name is a hit target for the box, so it should look like one. */
+#V-PopupsNextcloudFiles li[data-icon="file"] label {
+	align-items: center;
+	cursor: pointer;
+	display: flex;
+	gap: 0.5em;
+	width: 100%;
 }

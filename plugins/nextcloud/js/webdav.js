@@ -138,15 +138,23 @@ const
 						ul.children.length
 						|| fetchFiles(item.name).then(items => buildTree(view, ul, items, item.name));
 					});
-					summary.textContent = item.name.replace(/^.*\/([^/]+)$/, '$1');
 					summary.dataset.icon = 'folder';
-					if (!view.files()) {
-						let btn = document.createElement('button');
-						btn.name = 'select';
-						btn.textContent = 'select';
-						btn.className = 'button-vue';
-						summary.append(btn);
-						summary.item_name = item.name;
+					if (view.files()) {
+						summary.textContent = item.name.replace(/^.*\/([^/]+)$/, '$1');
+					} else {
+						// One radio for the whole tree, so choosing a folder deeper in
+						// unchooses the one above without any bookkeeping here.
+						let radio = document.createElement('input'),
+							name = document.createElement('span');
+						radio.type = 'radio';
+						radio.name = 'nc-folder';
+						radio.item_name = item.name;
+						// A summary toggles its details on click, so without this
+						// picking a folder would also open or close it.
+						radio.addEventListener('click', event => event.stopPropagation());
+						name.textContent = item.name.replace(/^.*\/([^/]+)$/, '$1');
+						summary.append(radio);
+						summary.append(name);
 					}
 					details.append(summary);
 					details.append(ul);
@@ -159,14 +167,18 @@ const
 				items.forEach(item => {
 					if (item.isFile) {
 						let li = document.createElement('li'),
+							label = document.createElement('label'),
 							cb = document.createElement('input');
 
 						li.item = item;
-						li.textContent = item.name.replace(/^.*\/([^/]+)$/, '$1');
 						li.dataset.icon = 'file';
 
 						cb.type = 'checkbox';
-						li.append(cb);
+						// In a label, so the name is a hit target too rather than the
+						// box being the only thing that can be clicked.
+						label.append(cb);
+						label.append(item.name.replace(/^.*\/([^/]+)$/, '$1'));
+						li.append(label);
 
 						parent.append(li);
 					}
@@ -192,28 +204,31 @@ class NextcloudFilesPopupView extends rl.pluginPopupView {
 	constructor() {
 		super('NextcloudFiles');
 		this.addObservables({
-			files: false
+			files: false,
+			// The folder the radio chose, so the footer can say whether there is
+			// one yet rather than closing with nothing.
+			folder: ''
 		});
 	}
 
 	attach() {
 		this.select = [];
-		this.tree.querySelectorAll('input').forEach(input =>
-			input.checked && this.select.push(input.parentNode.item)
+		this.tree.querySelectorAll('input[type="checkbox"]').forEach(input =>
+			input.checked && this.select.push(input.closest('li').item)
 		);
 		this.close();
 	}
 
 	shareInternal() {
 		this.select = [];
-		this.tree.querySelectorAll('input').forEach(input =>
-			input.checked && this.select.push({url:generateRemoteUrl(`/f/${input.parentNode.item.id}`)})
+		this.tree.querySelectorAll('input[type="checkbox"]').forEach(input =>
+			input.checked && this.select.push({url:generateRemoteUrl(`/f/${input.closest('li').item.id}`)})
 		);
 		this.close();
 	}
 
 	sharePublic() {
-		const inputs = [...this.tree.querySelectorAll('input')],
+		const inputs = [...this.tree.querySelectorAll('input[type="checkbox"]')],
 			loop = () => {
 				if (!inputs.length) {
 					this.close();
@@ -223,7 +238,7 @@ class NextcloudFilesPopupView extends rl.pluginPopupView {
 				if (!input.checked) {
 					loop();
 				} else {
-					const item = input.parentNode.item;
+					const item = input.closest('li').item;
 					if (item.shared) {
 						ncFetch(
 							shareUrl() + `?format=json&path=${encodeURIComponent(item.name)}&reshares=true`
@@ -266,14 +281,14 @@ class NextcloudFilesPopupView extends rl.pluginPopupView {
 
 	onBuild(dom) {
 		this.tree = dom.querySelector('#sm-nc-files-tree');
+		this.tree.addEventListener('change', event => {
+			event.target.matches('input[type="radio"]') && this.folder(event.target.item_name);
+		});
 		this.tree.addEventListener('click', event => {
 			let el = event.target;
 			if (el.matches('button')) {
 				let parent = el.parentNode;
-				if ('select' == el.name) {
-					this.select = parent.item_name;
-					this.close();
-				} else if ('create' == el.name) {
+				if ('create' == el.name) {
 					let name = el.input.value.replace(/[|\\?*<":>+[]\/&\s]/g, '');
 					if (name.length) {
 						name = parent.item_path + '/' + name;
@@ -289,9 +304,16 @@ class NextcloudFilesPopupView extends rl.pluginPopupView {
 		});
 	}
 
+	/** Folder mode: take the folder the radio chose. */
+	selectFolder() {
+		this.select = this.folder();
+		this.close();
+	}
+
 	// Happens after showModal()
 	beforeShow(files, fResolve) {
 		this.select = '';
+		this.folder('');
 		this.files(!!files);
 		this.fResolve = fResolve;
 

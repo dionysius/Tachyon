@@ -4,13 +4,12 @@
 	<h3 data-i18n="NEXTCLOUD/SELECT_FILES" data-bind="visible:files"></h3>
 </header>
 <div class="modal-body form-horizontal">
-<!--
-	TODO: built tree of directories and optional files
-	In case of directories: radiobutton to select one OR click selects
-	In case of files: checkbox to select (multiple)
--->
 	<ul id="sm-nc-files-tree"></ul>
 </div>
+<footer data-bind="hidden:files">
+	<button data-bind="click:selectFolder, disable:!folder()" name="select-folder" data-icon="folder"
+		class="button-vue" data-i18n="NEXTCLOUD/SELECT_FOLDER">select folder</button>
+</footer>
 <footer data-bind="visible:files">
 	<button data-bind="click:attach" name="select" data-icon="paperclip" class="button-vue" data-i18n="NEXTCLOUD/FILE_ATTACH">attach</button>
 	<button data-bind="click:shareInternal" name="share-internal" data-icon="link" class="button-vue" data-i18n="NEXTCLOUD/FILE_INTERNAL">internal</button>
