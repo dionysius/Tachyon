@@ -1,7 +1,25 @@
+## Unreleased
+
+### Security
+- The two-factor-auth plugin keeps its TOTP secret sealed rather than in clear, and backup codes only as hashes. A code from an already-accepted 30 second step is refused, and five failures in fifteen minutes lock that account's second factor for fifteen. Existing enrolments and printed backup codes carry over untouched. Thanks to @FathiBenNasr (#128)
+- The avatars plugin answered without a session and fetched a URL chosen by whoever asked, with the SSRF gate switched off, then cached the result under any address. Only instances with `bimi` or `favicon` enabled were affected; both default to off
+
+### Changed
+- **The two-factor secret is now tied to `APP_SALT`.** Lose or regenerate `SALT.php`, by restoring a backup without it for instance, and every user loses their second factor with no way back but an administrator clearing their record. Before this the secret was stored in clear and survived such a change. Back up `SALT.php` with the data directory
+
+### Fixed
+- A plugin updated to a build-numbered version kept reporting the version before it and offered the same update for ever. The release-time bump wrote the new version into `packages.json` but packaged an `index.php` still declaring the old one, and the admin panel reads the installed version from that constant. Reported by @ivnmad (#119)
+- Several callers passed HTTP headers as an associative array, which reached curl as bare values and were sent malformed and dropped: the integrity check, the breach lookup, which therefore travelled without its API key, and the CardDAV upload path, which answered `403 supported-address-data`. Thanks to @FathiBenNasr (#124)
+- Only the first `data-*` attribute was stripped from a composed message, because removing an attribute while iterating a live `DOMNamedNodeMap` ends the iteration. The rest went out in sent mail and saved drafts. Thanks to @FathiBenNasr (#126)
+- An empty contact list on either side of a CardDAV sync deleted everything on the other. An empty list is more often a fault than an intent, so deletions in that direction are now skipped and logged. Thanks to @FathiBenNasr (#125)
+- The ics-viewer panel never appeared on invitations from Evolution or Exchange, which put the calendar part inline and repeat it as `application/ics` rather than attaching `text/calendar`. Thanks to @FathiBenNasr (#127)
+
+---
+
 ## 4.4.1 - 2026-10-07
 
 ### Fixed
-- Upgrading to 4.4.0 could leave you unable to log in, with `Folders error: HTTP Token mismatch` on every attempt. The first request after an upgrade empties the cache directory, and requests arriving together all got past the version check before any of them recorded the new version, so several walked and deleted the same tree at once. One removed a directory another had already listed, and that request died with a fatal part way through the page. The browser then held a page with no usable request token and every later call was rejected, which looked like a login fault rather than an install one. Reported by @realsimix (#121)
+- The first request after an upgrade could die part way through the page. It empties the cache directory, and requests arriving together all got past the version check before any of them recorded the new version, so several walked and deleted the same tree at once; one removed a directory another had already listed and that request ended in a fatal. A browser left holding a half-built page has no usable request token, so later calls come back as `Folders error: HTTP Token mismatch`, which reads as a login fault rather than an install one. Found in the log attached to #121, though it has not turned out to be the whole of what @realsimix is seeing: that report is still open
 
 ---
 
